@@ -94,7 +94,7 @@ func compile() error {
 		return fmt.Errorf("make olddefconfig: %v", err)
 	}
 
-	make := exec.Command("make", "zImage", "dtbs", "-j"+strconv.Itoa(runtime.NumCPU()))
+	make := exec.Command("make", "zImage", "dtbs", "modules", "-j"+strconv.Itoa(runtime.NumCPU()))
 	make.Env = append(os.Environ(),
 		"ARCH=arm",
 		"CROSS_COMPILE=arm-linux-gnueabihf-",
@@ -174,5 +174,37 @@ func main() {
 
 	if err := copyFile("/tmp/buildresult/sun7i-a20-lamobo-r1.dtb", "arch/arm/boot/dts/allwinner/sun7i-a20-lamobo-r1.dtb"); err != nil {
 		log.Fatal(err)
+	}
+
+	// Install kernel modules
+	log.Printf("installing kernel modules")
+	modInstall := exec.Command("make",
+		"ARCH=arm",
+		"CROSS_COMPILE=arm-linux-gnueabihf-",
+		"INSTALL_MOD_PATH=/tmp/modstaging",
+		"modules_install",
+	)
+	modInstall.Stdout = os.Stdout
+	modInstall.Stderr = os.Stderr
+	if err := modInstall.Run(); err != nil {
+		log.Fatalf("make modules_install: %v", err)
+	}
+
+	// Copy lib/modules/ tree to build result
+	cpMods := exec.Command("cp", "-a", "/tmp/modstaging/lib", "/tmp/buildresult/lib")
+	cpMods.Stdout = os.Stdout
+	cpMods.Stderr = os.Stderr
+	if err := cpMods.Run(); err != nil {
+		log.Fatalf("copying modules: %v", err)
+	}
+
+	// Remove build/source symlinks (point to build host paths)
+	modDirs, _ := filepath.Glob("/tmp/buildresult/lib/modules/*/build")
+	for _, d := range modDirs {
+		os.Remove(d)
+	}
+	modDirs, _ = filepath.Glob("/tmp/buildresult/lib/modules/*/source")
+	for _, d := range modDirs {
+		os.Remove(d)
 	}
 }

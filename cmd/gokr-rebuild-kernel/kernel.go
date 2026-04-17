@@ -234,4 +234,19 @@ func main() {
 	if err := copyFile(dtbPath, filepath.Join(tmp, "sun7i-a20-lamobo-r1.dtb")); err != nil {
 		log.Fatal(err)
 	}
+
+	// Copy kernel modules (lib/modules/) to the repo
+	repoDir := filepath.Dir(kernelPath)
+	libSrc := filepath.Join(tmp, "lib")
+	if _, err := os.Stat(libSrc); err == nil {
+		libDest := filepath.Join(repoDir, "lib")
+		os.RemoveAll(libDest)
+		cpCmd := exec.Command("cp", "-a", libSrc, libDest)
+		cpCmd.Stdout = os.Stdout
+		cpCmd.Stderr = os.Stderr
+		if err := cpCmd.Run(); err != nil {
+			log.Fatalf("copying modules: %v", err)
+		}
+		log.Printf("kernel modules installed to %s", libDest)
+	}
 }

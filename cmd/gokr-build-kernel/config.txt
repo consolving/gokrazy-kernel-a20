@@ -41,15 +41,13 @@ CONFIG_BRIDGE=y
 CONFIG_BRIDGE_VLAN_FILTERING=y
 
 # ==========================================================
-# WiFi: Realtek RTL8192CU (USB)
-# ==========================================================
+# WiFi: Realtek RTL8192CU (USB) via rtl8xxxu driver
+CONFIG_WLAN=y
 CONFIG_CFG80211=m
 CONFIG_MAC80211=m
-CONFIG_WIRELESS=y
+CONFIG_LEDS_CLASS=y
 CONFIG_RTL8XXXU=m
-CONFIG_RTL8192CU=m
-CONFIG_RTLWIFI=m
-CONFIG_RTL8192C_COMMON=m
+CONFIG_RTL8XXXU_UNTESTED=y
 
 # ==========================================================
 # USB
