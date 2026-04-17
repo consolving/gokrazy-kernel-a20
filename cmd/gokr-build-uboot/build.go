@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,10 +13,10 @@ import (
 )
 
 // U-Boot v2025.04 (latest stable as of 2025)
-const ubootRev = "v2025.04"
+const ubootVersion = "v2025.04"
 const ubootTS = 1600000000
 
-const uBootRepo = "https://github.com/u-boot/u-boot"
+var ubootTarball = "https://github.com/u-boot/u-boot/archive/refs/tags/" + ubootVersion + ".tar.gz"
 
 func applyPatches(srcdir string) error {
 	patches, err := filepath.Glob("*.patch")
@@ -139,29 +140,44 @@ func main() {
 		bootCmdPath = p
 	}
 
-	if err := os.Chdir(ubootDir); err != nil {
+	// Download U-Boot tarball
+	log.Printf("downloading %s", ubootTarball)
+	resp, err := http.Get(ubootTarball)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Fatalf("HTTP %s for %s", resp.Status, ubootTarball)
+	}
+
+	tarPath := filepath.Join(ubootDir, "u-boot.tar.gz")
+	tarFile, err := os.Create(tarPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if _, err := io.Copy(tarFile, resp.Body); err != nil {
+		log.Fatal(err)
+	}
+	tarFile.Close()
+
+	// Extract tarball
+	log.Printf("extracting u-boot tarball")
+	tar := exec.Command("tar", "xzf", tarPath, "-C", ubootDir)
+	tar.Stdout = os.Stdout
+	tar.Stderr = os.Stderr
+	if err := tar.Run(); err != nil {
+		log.Fatalf("tar xzf: %v", err)
+	}
+
+	// The tarball extracts to u-boot-<version> (without leading 'v')
+	srcDir := filepath.Join(ubootDir, "u-boot-"+ubootVersion[1:])
+	if err := os.Chdir(srcDir); err != nil {
 		log.Fatal(err)
 	}
 
-	// Clone U-Boot at the specified tag
-	for _, cmd := range [][]string{
-		{"git", "init"},
-		{"git", "remote", "add", "origin", uBootRepo},
-		{"git", "fetch", "--depth=1", "origin", ubootRev},
-		{"git", "checkout", "FETCH_HEAD"},
-	} {
-		log.Printf("Running %s", cmd)
-		cmdObj := exec.Command(cmd[0], cmd[1:]...)
-		cmdObj.Stdout = os.Stdout
-		cmdObj.Stderr = os.Stderr
-		cmdObj.Dir = ubootDir
-		if err := cmdObj.Run(); err != nil {
-			log.Fatal(err)
-		}
-	}
-
 	log.Printf("applying patches")
-	if err := applyPatches(ubootDir); err != nil {
+	if err := applyPatches(srcDir); err != nil {
 		log.Fatal(err)
 	}
 
