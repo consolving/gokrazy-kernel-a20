@@ -42,9 +42,11 @@ CONFIG_BRIDGE_VLAN_FILTERING=y
 
 # ==========================================================
 # WiFi: Realtek RTL8192CU (USB) via rtl8xxxu driver
+# cfg80211, mac80211 and libarc4 built-in so only rtl8xxxu needs module loading
 CONFIG_WLAN=y
-CONFIG_CFG80211=m
-CONFIG_MAC80211=m
+CONFIG_CFG80211=y
+CONFIG_MAC80211=y
+CONFIG_CRYPTO_LIB_ARC4=y
 CONFIG_LEDS_CLASS=y
 CONFIG_RTL8XXXU=m
 CONFIG_RTL8XXXU_UNTESTED=y

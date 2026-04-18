@@ -1,13 +1,3 @@
-kernel/crypto/cmac.ko
-kernel/crypto/crypto_null.ko
-kernel/crypto/sha256_generic.ko
-kernel/crypto/ctr.ko
-kernel/crypto/gcm.ko
-kernel/crypto/ccm.ko
-kernel/crypto/ghash-generic.ko
-kernel/lib/crypto/libarc4.ko
-kernel/lib/crypto/gf128mul.ko
-kernel/lib/crypto/libsha256.ko
 kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko
 kernel/drivers/net/can/dev/can-dev.ko
 kernel/drivers/net/can/sun4i_can.ko
@@ -167,9 +157,7 @@ kernel/drivers/media/v4l2-core/v4l2-dv-timings.ko
 kernel/drivers/media/v4l2-core/videodev.ko
 kernel/drivers/staging/media/sunxi/cedrus/sunxi-cedrus.ko
 kernel/sound/soc/sunxi/sun4i-codec.ko
-kernel/net/wireless/cfg80211.ko
 kernel/net/can/can.ko
 kernel/net/can/can-raw.ko
 kernel/net/can/can-bcm.ko
 kernel/net/can/can-gw.ko
-kernel/net/mac80211/mac80211.ko
