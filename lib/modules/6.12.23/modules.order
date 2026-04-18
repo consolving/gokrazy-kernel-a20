@@ -1,4 +1,7 @@
-kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko
+kernel/drivers/net/wireless/realtek/rtlwifi/rtlwifi.ko
+kernel/drivers/net/wireless/realtek/rtlwifi/rtl_usb.ko
+kernel/drivers/net/wireless/realtek/rtlwifi/rtl8192c/rtl8192c-common.ko
+kernel/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/rtl8192cu.ko
 kernel/drivers/net/can/dev/can-dev.ko
 kernel/drivers/net/can/sun4i_can.ko
 kernel/drivers/media/i2c/ir-kbd-i2c.ko

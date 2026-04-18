@@ -41,16 +41,22 @@ CONFIG_BRIDGE=y
 CONFIG_BRIDGE_VLAN_FILTERING=y
 
 # ==========================================================
-# WiFi: Realtek RTL8192CU (USB) via rtl8xxxu driver
-# cfg80211, mac80211 and libarc4 built-in so only rtl8xxxu needs module loading
+# WiFi: Realtek RTL8192CU (USB) via rtlwifi driver
+# cfg80211, mac80211, libarc4, rtlwifi, rtl_usb, rtl8192c-common built-in
+# Only the leaf driver rtl8192cu is a module
 CONFIG_WLAN=y
 CONFIG_CFG80211=y
 CONFIG_CFG80211_REQUIRE_SIGNED_REGDB=n
 CONFIG_MAC80211=y
 CONFIG_CRYPTO_LIB_ARC4=y
 CONFIG_LEDS_CLASS=y
-CONFIG_RTL8XXXU=m
-CONFIG_RTL8XXXU_UNTESTED=y
+CONFIG_RTL_CARDS=y
+CONFIG_RTLWIFI=y
+CONFIG_RTLWIFI_USB=y
+CONFIG_RTL8192C_COMMON=y
+CONFIG_RTL8192CU=m
+# Disable the old rtl8xxxu driver to avoid conflicts
+CONFIG_RTL8XXXU=n
 
 # Embed regulatory.db into kernel binary (cfg80211 loads before rootfs is mounted)
 CONFIG_EXTRA_FIRMWARE="regulatory.db regulatory.db.p7s"
