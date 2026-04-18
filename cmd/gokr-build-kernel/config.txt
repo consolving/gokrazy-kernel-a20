@@ -53,7 +53,7 @@ CONFIG_RTL8XXXU=m
 CONFIG_RTL8XXXU_UNTESTED=y
 
 # Embed regulatory.db into kernel binary (cfg80211 loads before rootfs is mounted)
-CONFIG_EXTRA_FIRMWARE="regulatory.db"
+CONFIG_EXTRA_FIRMWARE="regulatory.db regulatory.db.p7s"
 CONFIG_EXTRA_FIRMWARE_DIR="/tmp/firmware"
 
 # ==========================================================

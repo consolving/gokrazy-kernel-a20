@@ -26,6 +26,7 @@ COPY {{ $path }} /usr/src/{{ $path }}
 # Stage firmware for embedding via CONFIG_EXTRA_FIRMWARE
 RUN mkdir -p /tmp/firmware
 COPY regulatory.db /tmp/firmware/regulatory.db
+COPY regulatory.db.p7s /tmp/firmware/regulatory.db.p7s
 
 RUN echo 'builduser:x:{{ .Uid }}:{{ .Gid }}:nobody:/:/bin/sh' >> /etc/passwd && \
     chown -R {{ .Uid }}:{{ .Gid }} /usr/src /tmp/firmware
@@ -172,6 +173,14 @@ func main() {
 		log.Printf("warning: regulatory.db not found, skipping: %v", err)
 	} else {
 		if err := copyFile(filepath.Join(tmp, "regulatory.db"), regdbPath); err != nil {
+			log.Fatal(err)
+		}
+	}
+	regdbP7sPath, err := find(filepath.Join("lib", "firmware", "regulatory.db.p7s"))
+	if err != nil {
+		log.Printf("warning: regulatory.db.p7s not found, skipping: %v", err)
+	} else {
+		if err := copyFile(filepath.Join(tmp, "regulatory.db.p7s"), regdbP7sPath); err != nil {
 			log.Fatal(err)
 		}
 	}
