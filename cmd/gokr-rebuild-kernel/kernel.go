@@ -45,7 +45,7 @@ var dockerFileTmpl = template.Must(template.New("dockerfile").
 	Parse(dockerFileContents))
 
 var patchFiles = []string{
-	// Add patch filenames here as needed
+	"rtl8192cu-ap-mode.patch",
 }
 
 func copyFile(dest, src string) error {

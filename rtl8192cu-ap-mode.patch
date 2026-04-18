@@ -1,0 +1,8 @@
+--- a/drivers/net/wireless/realtek/rtl8xxxu/8192c.c
++++ b/drivers/net/wireless/realtek/rtl8xxxu/8192c.c
+@@ -655,4 +655,5 @@ struct rtl8xxxu_fileops rtl8192cu_fops = {
+ 	.page_num_lo = TX_PAGE_NUM_LO_PQ,
+ 	.page_num_norm = TX_PAGE_NUM_NORM_PQ,
++	.supports_ap = 1,
+ };
+ #endif
