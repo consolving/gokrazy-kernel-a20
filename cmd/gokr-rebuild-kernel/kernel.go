@@ -23,8 +23,12 @@ COPY gokr-build-kernel /usr/bin/gokr-build-kernel
 COPY {{ $path }} /usr/src/{{ $path }}
 {{- end }}
 
+# Stage firmware for embedding via CONFIG_EXTRA_FIRMWARE
+RUN mkdir -p /tmp/firmware
+COPY regulatory.db /tmp/firmware/regulatory.db
+
 RUN echo 'builduser:x:{{ .Uid }}:{{ .Gid }}:nobody:/:/bin/sh' >> /etc/passwd && \
-    chown -R {{ .Uid }}:{{ .Gid }} /usr/src
+    chown -R {{ .Uid }}:{{ .Gid }} /usr/src /tmp/firmware
 
 USER builduser
 WORKDIR /usr/src
@@ -162,6 +166,16 @@ func main() {
 		}
 	}
 
+	// Copy regulatory.db for embedding into the kernel via CONFIG_EXTRA_FIRMWARE
+	regdbPath, err := find(filepath.Join("lib", "firmware", "regulatory.db"))
+	if err != nil {
+		log.Printf("warning: regulatory.db not found, skipping: %v", err)
+	} else {
+		if err := copyFile(filepath.Join(tmp, "regulatory.db"), regdbPath); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	u, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
@@ -240,6 +254,23 @@ func main() {
 	libSrc := filepath.Join(tmp, "lib")
 	if _, err := os.Stat(libSrc); err == nil {
 		libDest := filepath.Join(repoDir, "lib")
+
+		// Preserve firmware files before wiping lib/
+		fwBackup, err := os.MkdirTemp("", "fw-backup")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer os.RemoveAll(fwBackup)
+		fwDir := filepath.Join(libDest, "firmware")
+		hasFirmware := false
+		if _, err := os.Stat(fwDir); err == nil {
+			hasFirmware = true
+			cpFw := exec.Command("cp", "-a", fwDir, filepath.Join(fwBackup, "firmware"))
+			if err := cpFw.Run(); err != nil {
+				log.Fatalf("backing up firmware: %v", err)
+			}
+		}
+
 		os.RemoveAll(libDest)
 		cpCmd := exec.Command("cp", "-a", libSrc, libDest)
 		cpCmd.Stdout = os.Stdout
@@ -248,5 +279,14 @@ func main() {
 			log.Fatalf("copying modules: %v", err)
 		}
 		log.Printf("kernel modules installed to %s", libDest)
+
+		// Restore firmware files
+		if hasFirmware {
+			restCmd := exec.Command("cp", "-a", filepath.Join(fwBackup, "firmware"), fwDir)
+			if err := restCmd.Run(); err != nil {
+				log.Fatalf("restoring firmware: %v", err)
+			}
+			log.Printf("restored firmware files to %s", fwDir)
+		}
 	}
 }
