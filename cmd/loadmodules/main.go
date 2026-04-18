@@ -1,10 +1,14 @@
-// Command loadmodules loads kernel modules for the BPI-R1 at boot.
+// Command loadmodules loads kernel modules at boot.
 //
-// It loads the rtl8xxxu WiFi driver module. The WiFi stack dependencies
-// (cfg80211, mac80211, libarc4) are built into the kernel.
+// Module paths are passed as command-line arguments, relative to
+// /lib/modules/<kernel-release>/. They are loaded in order, so
+// dependencies must come before the modules that need them.
 //
-// This program is intended to be added to a gokrazy instance as a package.
-// It loads the modules and exits — gokrazy should not supervise it.
+// Configure the module list via CommandLineFlags in gokrazy's
+// config.json. See the README for examples.
+//
+// loadmodules exits with status 125 on success, which tells gokrazy
+// not to supervise (restart) the process.
 package main
 
 import (
@@ -43,11 +47,13 @@ func loadModule(rel, mod string) error {
 	return nil
 }
 
-var modules = []string{
-	"kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko",
-}
-
 func main() {
+	modules := os.Args[1:]
+	if len(modules) == 0 {
+		fmt.Fprintf(os.Stderr, "loadmodules: no modules specified, nothing to do\n")
+		os.Exit(125)
+	}
+
 	rel := release()
 	var failed bool
 	for _, mod := range modules {

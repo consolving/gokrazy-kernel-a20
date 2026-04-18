@@ -60,6 +60,76 @@ The kernel is based on mainline Linux with `sunxi_defconfig` plus a config adden
 - TUN/TAP (for Tailscale)
 - gokrazy essentials (squashfs, NLS, vfat, etc.)
 
+## Loading Kernel Modules
+
+This package includes `cmd/loadmodules`, a small program that loads kernel
+modules at boot using `finit_module(2)`. gokrazy has no `modprobe` or `depmod`,
+so this replaces them.
+
+Modules are specified as command-line arguments (paths relative to
+`/lib/modules/<release>/`). They are loaded in order, so list dependencies
+before the modules that need them.
+
+Add `loadmodules` to your instance's `Packages` and configure the module list
+via `CommandLineFlags` in `PackageConfig`:
+
+### Example: Load the RTL8192CU WiFi driver
+
+The WiFi stack (cfg80211, mac80211, libarc4) is built into the kernel, so only
+the driver module needs loading:
+
+```json
+{
+    "Packages": [
+        "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules"
+    ],
+    "PackageConfig": {
+        "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules": {
+            "CommandLineFlags": [
+                "kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko"
+            ]
+        }
+    }
+}
+```
+
+### Example: Load multiple modules with dependencies
+
+If your kernel config builds cfg80211 and mac80211 as modules (`=m`) instead of
+built-in (`=y`), list them in dependency order:
+
+```json
+{
+    "PackageConfig": {
+        "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules": {
+            "CommandLineFlags": [
+                "kernel/lib/crypto/libarc4.ko",
+                "kernel/net/wireless/cfg80211.ko",
+                "kernel/net/mac80211/mac80211.ko",
+                "kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko"
+            ]
+        }
+    }
+}
+```
+
+### Example: Load a USB Ethernet adapter driver
+
+```json
+{
+    "PackageConfig": {
+        "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules": {
+            "CommandLineFlags": [
+                "kernel/drivers/net/usb/r8152.ko"
+            ]
+        }
+    }
+}
+```
+
+The program exits with status 125 after loading all modules, which tells
+gokrazy not to restart it. If any module fails to load, it exits with status 1.
+
 ---
 
 # Banana Pi BPI-R1 (Lamobo R1) Hardware Specification
