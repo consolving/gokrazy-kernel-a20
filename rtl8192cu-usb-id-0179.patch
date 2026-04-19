@@ -1,0 +1,21 @@
+Add USB ID 0bda:0179 (RTL8189ETV/RTL8192CU variant) to rtlwifi/rtl8192cu
+
+The Banana Pi BPI-R1 has a soldered RTL8189ETV WiFi module that
+presents as USB ID 0bda:0179. This chip is a 2T2R RTL8192CU variant
+but its device ID is missing from the upstream USB ID table.
+
+The rtl8xxxu driver detects this chip but cannot forward data frames
+in AP mode, making DHCP and all client traffic non-functional.
+The rtlwifi/rtl8192cu driver has proper AP mode support.
+
+--- a/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/sw.c
++++ b/drivers/net/wireless/realtek/rtlwifi/rtl8192cu/sw.c
+@@ -285,6 +285,8 @@
+ 	{RTL_USB_DEVICE(USB_VENDOR_ID_REALTEK, 0x8178, rtl92cu_hal_cfg)},
+ 	/* 8192CE-VAU USB minCard */
+ 	{RTL_USB_DEVICE(USB_VENDOR_ID_REALTEK, 0x817c, rtl92cu_hal_cfg)},
++	/* RTL8189ETV (BPI-R1 onboard WiFi) */
++	{RTL_USB_DEVICE(USB_VENDOR_ID_REALTEK, 0x0179, rtl92cu_hal_cfg)},
+ 
+ 	/*=== Customer ID ===*/
+ 	/****** 8188CU ********/
