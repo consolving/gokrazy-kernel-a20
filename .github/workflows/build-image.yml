@@ -27,15 +27,28 @@ jobs:
         with:
           path: kernel-a20
 
+      - name: Check out tools (consolving fork)
+        uses: actions/checkout@v4
+        with:
+          repository: consolving/gokrazy-tools
+          path: tools
+
+      - name: Check out internal (consolving fork)
+        uses: actions/checkout@v4
+        with:
+          repository: consolving/gokrazy-internal
+          path: internal
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: kernel-a20/go.sum
 
-      - name: Install gok
+      - name: Build and install gok from source
         run: |
-          GOPROXY=direct go install github.com/gokrazy/tools/cmd/gok@latest
+          go install ./cmd/gok
+        working-directory: tools
 
       - name: Create gokrazy instance
         run: |
