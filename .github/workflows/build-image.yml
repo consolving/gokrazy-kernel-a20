@@ -1,0 +1,147 @@
+name: Build SD Card Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+  schedule:
+    # Nightly at 04:30 UTC
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  IMAGE_SIZE_BYTES: "2147483648"  # 2 GiB
+  GO_VERSION: "~1.25"
+
+jobs:
+  build:
+    name: Build BPI-R1 Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out kernel repo
+        uses: actions/checkout@v4
+        with:
+          path: kernel-a20
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: kernel-a20/go.sum
+
+      - name: Install gok
+        run: |
+          GOPROXY=direct go install github.com/gokrazy/tools/cmd/gok@latest
+
+      - name: Create gokrazy instance
+        run: |
+          mkdir -p ~/gokrazy/bpi-r1
+          cat > ~/gokrazy/bpi-r1/config.json <<'EOF'
+          {
+              "Hostname": "bpi-r1",
+              "DeviceType": "bpi_r1",
+              "KernelPackage": "github.com/consolving/gokrazy-kernel-a20",
+              "FirmwarePackage": "",
+              "EEPROMPackage": "",
+              "SerialConsole": "ttyS0,115200",
+              "Packages": [
+                  "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules"
+              ],
+              "PackageConfig": {
+                  "github.com/consolving/gokrazy-kernel-a20/cmd/loadmodules": {
+                      "CommandLineFlags": [
+                          "kernel/lib/crypto/libarc4.ko",
+                          "kernel/net/wireless/cfg80211.ko",
+                          "kernel/net/mac80211/mac80211.ko",
+                          "kernel/drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko"
+                      ]
+                  }
+              }
+          }
+          EOF
+
+      - name: Point instance to local kernel checkout
+        run: |
+          gok -i bpi-r1 add "${{ github.workspace }}/kernel-a20"
+
+      - name: Determine version string
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "version=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=nightly-$(date -u +%Y%m%d)" >> "$GITHUB_OUTPUT"
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build full disk image (.img)
+        run: |
+          GOARCH=arm gok -i bpi-r1 overwrite \
+            --full="${{ github.workspace }}/bpi-r1.img" \
+            --target_storage_bytes=${{ env.IMAGE_SIZE_BYTES }} \
+            --sudo=never
+
+      - name: Build GAF archive (.gaf)
+        run: |
+          GOARCH=arm gok -i bpi-r1 overwrite \
+            --gaf="${{ github.workspace }}/bpi-r1.gaf" \
+            --sudo=never
+
+      - name: Compress disk image
+        run: |
+          xz -T0 -9 "${{ github.workspace }}/bpi-r1.img"
+
+      - name: Create GitHub Release (tag)
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "${{ github.ref_name }}"
+          body: |
+            ## BPI-R1 SD Card Image
+
+            **${{ github.ref_name }}** — Kernel + loadmodules (WiFi) for the Banana Pi BPI-R1.
+
+            ### Files
+            - `bpi-r1.img.xz` — Full 2 GiB disk image. Decompress and `dd` to SD card.
+            - `bpi-r1.gaf` — gokrazy archive (ZIP with individual partition images + SBOM).
+
+            ### Write to SD card
+            ```bash
+            xz -d bpi-r1.img.xz
+            sudo dd if=bpi-r1.img of=/dev/sdX bs=4M status=progress
+            ```
+          files: |
+            ${{ github.workspace }}/bpi-r1.img.xz
+            ${{ github.workspace }}/bpi-r1.gaf
+
+      - name: Update nightly pre-release
+        if: github.ref_type != 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: "Nightly (${{ steps.version.outputs.version }})"
+          prerelease: true
+          body: |
+            ## BPI-R1 Nightly SD Card Image
+
+            **${{ steps.version.outputs.version }}** — Built from `${{ github.sha }}` on `main`.
+
+            > This pre-release is overwritten every night. For stable images use a tagged release.
+
+            ### Files
+            - `bpi-r1.img.xz` — Full 2 GiB disk image. Decompress and `dd` to SD card.
+            - `bpi-r1.gaf` — gokrazy archive (ZIP with individual partition images + SBOM).
+
+            ### Write to SD card
+            ```bash
+            xz -d bpi-r1.img.xz
+            sudo dd if=bpi-r1.img of=/dev/sdX bs=4M status=progress
+            ```
+          files: |
+            ${{ github.workspace }}/bpi-r1.img.xz
+            ${{ github.workspace }}/bpi-r1.gaf
