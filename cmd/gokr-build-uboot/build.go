@@ -56,7 +56,7 @@ func compile() error {
 	if err != nil {
 		return err
 	}
-	if _, err := f.Write([]byte("CONFIG_CMD_SETEXPR=y\nCONFIG_CMD_SETEXPR_FMT=y\n")); err != nil {
+	if _, err := f.Write([]byte("CONFIG_CMD_SETEXPR=y\nCONFIG_CMD_SETEXPR_FMT=y\nCONFIG_BOOTDELAY=0\n")); err != nil {
 		return err
 	}
 	if err := f.Close(); err != nil {
