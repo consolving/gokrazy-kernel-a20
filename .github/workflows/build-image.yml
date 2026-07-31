@@ -27,11 +27,18 @@ jobs:
         with:
           path: kernel-a20
 
-      - name: Check out tools
+      - name: Check out tools (consolving fork)
         uses: actions/checkout@v4
         with:
-          repository: gokrazy/tools
+          repository: consolving/gokrazy-tools
           path: tools
+
+      - name: Check out internal (consolving fork)
+        uses: actions/checkout@v4
+        with:
+          repository: consolving/gokrazy-internal
+          path: internal
+          ref: 55f1215932fa24adac19a309297ad0c41ddacb5d
 
       - name: Set up Go
         uses: actions/setup-go@v5
