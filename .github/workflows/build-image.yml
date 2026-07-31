@@ -38,7 +38,7 @@ jobs:
         with:
           repository: consolving/gokrazy-internal
           path: internal
-          ref: 55f1215932fa24adac19a309297ad0c41ddacb5d
+          ref: 55f1215932fa24adac19a309297ad0c41ddacb8d
 
       - name: Set up Go
         uses: actions/setup-go@v5
